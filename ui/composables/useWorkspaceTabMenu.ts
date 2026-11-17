@@ -37,7 +37,8 @@ function getTokenId(tab: Pick<WorkspaceSessionTab, "payload">) {
 
 async function requiresCredentialSetup(tab: WorkspaceSessionTab) {
   const asset = sessionToAsset(tab);
-  if (tab.protocol.toLowerCase() === "sftp") return { asset, needsSetup: false };
+  // Refresh permissions for every protocol, including SFTP. The old token
+  // and account selection may no longer be authorized after an ACL update.
   const detail = await getAssetDetailRequest(tab.assetId, tab.orgId || "");
   asset.permedAccounts = detail.permed_accounts || [];
   asset.permedProtocols = detail.permed_protocols || asset.permedProtocols;
@@ -46,7 +47,9 @@ async function requiresCredentialSetup(tab: WorkspaceSessionTab) {
   );
   return {
     asset,
-    needsSetup: accounts.some((item) => !item.alias.startsWith("@") && needsInputSecret(item))
+    needsSetup:
+      (tab.protocol.toLowerCase() === "sftp" && accounts.length === 0) ||
+      accounts.some((item) => !item.alias.startsWith("@") && needsInputSecret(item))
   };
 }
 
@@ -111,7 +114,7 @@ export function useWorkspaceTabMenu() {
       tab.account,
       tab.assetId,
       tab.protocol,
-      tab.protocol.toLowerCase() === "sftp" ? undefined : asset.permedAccounts,
+      asset.permedAccounts,
       undefined,
       {
         tabId: tab.id,

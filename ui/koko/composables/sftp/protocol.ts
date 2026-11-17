@@ -10,6 +10,7 @@ export enum SftpMessageType {
   MCPCancel = "mcp.cancel",
   MCPCancelResult = "mcp.cancel_result",
   Error = "ERROR",
+  AuthorizationRevoking = "SFTP_PERMISSION_REVOKING",
   Close = "CLOSE",
   Closed = "closed"
 }
@@ -213,6 +214,7 @@ export interface SftpControlMessage extends SftpMessageBase {
     | SftpMessageType.Ping
     | SftpMessageType.Pong
     | SftpMessageType.Error
+    | SftpMessageType.AuthorizationRevoking
     | SftpMessageType.Close
     | SftpMessageType.Closed;
 }

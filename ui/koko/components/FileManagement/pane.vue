@@ -476,6 +476,18 @@ defineExpose({
     @dragover="onTransferDragOver"
     @drop="onTransferDrop"
   >
+    <div
+      v-if="manager.revocationNotice.value && !manager.fatalError.value"
+      class="absolute inset-0 z-50 flex items-center justify-center bg-black/75 px-6"
+      role="alert"
+      aria-live="assertive"
+    >
+      <div class="max-w-lg rounded-lg border border-amber-500/50 bg-neutral-900 p-5 text-center shadow-xl">
+        <UIcon name="i-lucide-triangle-alert" class="mx-auto mb-3 size-8 text-amber-400" />
+        <p class="font-semibold text-amber-200">Asset authorization changed</p>
+        <p class="mt-2 text-sm text-neutral-100">{{ manager.revocationNotice.value }}</p>
+      </div>
+    </div>
     <SftpRemotePaneToolbar
       ref="toolbarRef"
       v-model:search="search"

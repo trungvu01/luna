@@ -86,6 +86,7 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
 
   const error = ref("");
   const fatalError = ref(false);
+  const revocationNotice = ref("");
   const capabilities = shallowRef<SftpCapabilities | null>(null);
   const capabilitiesKnown = ref(false);
   const currentPath = ref("");
@@ -112,6 +113,7 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
   async function reconnect() {
     error.value = "";
     fatalError.value = false;
+    revocationNotice.value = "";
     loading.value = true;
     fileAiReadiness.reset();
     capabilities.value = null;
@@ -218,6 +220,10 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
 
   const stopMessageListener = socket.onMessage((message) => {
     fileAiReadiness.handleMessage(message);
+    if (message.type === SftpMessageType.AuthorizationRevoking) {
+      revocationNotice.value = message.err || "Asset authorization changed. Please reconnect.";
+      return;
+    }
     if (message.type === SftpMessageType.Connect) {
       capabilities.value = parseSftpCapabilities(message.data);
       capabilitiesKnown.value = true;
@@ -238,7 +244,7 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
   });
 
   const stopFailureListener = socket.onFailure((failure) => {
-    const serverError = fatalError.value ? error.value : "";
+    const serverError = fatalError.value ? error.value : revocationNotice.value;
     fatalError.value = true;
     fileAiReadiness.reset();
     capabilities.value = null;
@@ -262,6 +268,7 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
       navigationIndex.value = -1;
       error.value = "";
       fatalError.value = false;
+      revocationNotice.value = "";
       loading.value = Boolean(context);
 
       if (activeContext.value) socket.connect(activeContext.value);
@@ -285,6 +292,7 @@ export function useSftpFileManager(ctx: Ref<ConnectorSessionContext | null>, tra
     loading,
     error,
     fatalError,
+    revocationNotice,
     hasConnected: socket.hasConnected,
     connected: computed(() => socket.connected.value && !fatalError.value),
     ready: computed(() => capabilitiesKnown.value && socket.connected.value && !fatalError.value),
